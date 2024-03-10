@@ -1,5 +1,5 @@
 # large-universes
-This repository formalises the following large universe types of Martin-Löf type theory
+This repository formalizes the following large universe types of Martin-Löf type theory
 
 - the universe types M and Q in MLQ [3]
 
