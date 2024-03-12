@@ -149,6 +149,69 @@ interleaved mutual
   𝕋h n A B 0 z≤n (codeΣ a b) = Σ (𝕋h n A B 0 z≤n a) (λ x → 𝕋h n A B 0 z≤n (b x))
   𝕋h n A B 0 z≤n (codeW a b) = W (𝕋h n A B 0 z≤n a) (λ x → 𝕋h n A B 0 z≤n (b x))
 
+-- MLQ as an instance of ML(3)
+
+1≤1 : 1 ≤ 1
+1≤1 = s≤s z≤n
+
+2≤2 : 2 ≤ 2
+2≤2 = s≤s 1≤1
+
+1≤2 : 1 ≤ 2
+1≤2 = s≤s z≤n
+
+Q₁ : Op 1
+Q₁ (A , B) =  𝕌h 0 A' B' 0 z≤n , 𝕋h 0 A' B' 0 z≤n
+  where
+  A' : (m : ℕ) → m ≤ 0 → Set
+  A' 0 z≤n = A
+
+  B' : (m : ℕ) → (x : m ≤ 0) → A' m x → Op m
+  B' 0 z≤n y = B y
+
+Q₂ : FamOp 1 → Op 1
+Q₂ (I , J) (A , B) = 𝕌h 1 A' B' 0 z≤n , 𝕋h 1 A' B' 0 z≤n 
+  where
+  A' : (m : ℕ) → m ≤ 1 → Set
+  A' 0 z≤n = A
+  A' (suc 0) (s≤s x) = I
+
+  B' : (m : ℕ) → (x : m ≤ 1) → A' m x → Op m
+  B' 0 z≤n y = B y
+  B' (suc 0) (s≤s x) y = J y
+
+Q̄₂ : Op 2
+Q̄₂ (I , J) = ⊤ , λ _ → Q₂ (I , J)
+
+postulate
+  X : Set
+  Y : X → Set
+  
+A' : (m : ℕ) → m ≤ 2 → Set
+A' 0 z≤n = X
+A' (suc 0) (s≤s z≤n) = ⊤
+A' (suc (suc 0)) (s≤s (s≤s z≤n)) = ⊤
+
+B' : (m : ℕ) → (x : m ≤ 2) → A' m x → Op m
+B' 0 z≤n = Y
+B' (suc 0) (s≤s z≤n) = λ _ → Q₁
+B' (suc (suc 0)) (s≤s (s≤s z≤n)) = λ _ → Q̄₂
+
+𝕄' : Set
+𝕄' = 𝕌h 2 A' B' 0 z≤n
+
+𝕊' : 𝕌h 2 A' B' 0 z≤n → Set
+𝕊' = 𝕋h 2 A' B' 0 z≤n
+
+ℚ' : Set
+ℚ' = 𝕌h 2 A' B' 1 1≤2
+
+𝔽' : ℚ' → (A : Set) → (B : A → Set) → Set
+𝔽' f A B = fst (𝕋h 2 A' B' 1 1≤2 f (A , B))
+
+𝔾' : (f : ℚ') → (A : Set) → (B : A → Set) → 𝔽' f A B → Set
+𝔾' f A B x = snd (𝕋h 2 A' B' 1 1≤2 f (A , B)) x
+
 
 -- external Mahlo universe
 
