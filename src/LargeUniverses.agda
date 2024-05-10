@@ -11,26 +11,38 @@ open import Data.Nat
 open import Preliminaries
 
 
--- Definition of Universes (𝕄 , 𝕊) and (ℚ , 𝔽 , 𝔾) of MLQ
+-- Definition of the two universes (𝕄 , 𝕊) and (ℚ , 𝔽 , 𝔾) of MLQ
 
-{- 𝔸 consists of
-   C : Set, F : C → (A : Set) → (B : A → Set) → Set, G : (x : C) → (A : Set) → (B : A → Set) → F x A B → Set,
-   A : Set, B : A → Set -}
+-- 𝔸 is the type of tuples which consist of
+-- C : Set,
+-- F : C → (A : Set) → (B : A → Set) → Set,
+-- G : (x : C) → (A : Set) → (B : A → Set) → F x A B → Set,
+-- A : Set,
+-- B : A → Set
+--
+-- elements of C are indices, and (A , B) provides a family of Sets
+-- (F , G) can be considered as a C-indexed family of operators of type (Σ Set λ A → Set) → (Σ Set λ A → Set)
+
 𝔸 : Set₁
 𝔸 = Σ Set λ C → Σ (C → (A : Set) → (B : A → Set) → Set) λ F →
       Σ ((x : C) → (A : Set) → (B : A → Set) → F x A B → Set) λ _ → Σ Set λ A → A → Set
+
+-- for a given (C , F , G , A , B) : 𝔸, we define the universe (𝕌 D , 𝕋 D) such that
+-- it contains C , A and B a for each a : A
+-- moreover, (𝕌 D , 𝕋 D) is closed under all operators in (F , G)
 
 interleaved mutual
 
   data 𝕌 (D : 𝔸) : Set
   𝕋 : (D : 𝔸) → 𝕌 D → Set
 
-  data 𝕌 (D : 𝔸) where
-    ⋆ : 𝕌 D
-    ◇ : 𝕌 D
-    j : fst (snd (snd (snd D))) → 𝕌 D
-    ♯ : fst D → (a : 𝕌 D) → (𝕋 D a → 𝕌 D) → 𝕌 D
-    † : (e : fst D) → (a : 𝕌 D) → (b : 𝕋 D a → 𝕌 D) → fst (snd D) e (𝕋 D a) (λ x → 𝕋 D (b x)) → 𝕌 D
+  data 𝕌 (D : 𝔸) where  -- let D be (C , F , G , A , B)
+    ⋆ : 𝕌 D  -- the code of C
+    ◇ : 𝕌 D  -- the code of A
+    j : fst (snd (snd (snd D))) → 𝕌 D  -- the code of B
+    ♯ : fst D → (a : 𝕌 D) → (𝕋 D a → 𝕌 D) → 𝕌 D  -- the code of F
+    † : (e : fst D) → (a : 𝕌 D) → (b : 𝕋 D a → 𝕌 D) →  -- the code of G
+          fst (snd D) e (𝕋 D a) (λ x → 𝕋 D (b x)) → 𝕌 D
     code⊥ : 𝕌 D
     code⊤ : 𝕌 D
     codeB : 𝕌 D
@@ -56,6 +68,14 @@ interleaved mutual
   𝕋 D (codeΣ a b) = Σ (𝕋 D a) (λ x → 𝕋 D (b x))
   𝕋 D (codeW a b) = W (𝕋 D a) (λ x → 𝕋 D (b x))
 
+-- (ℚ , 𝔽 , 𝔾) is the universe such that
+-- elements of ℚ are codes of universe operators:
+-- the constructor u of ℚ takes a family of (codes of) universe operators as an input
+-- and returns a (code of) universe operator giving a universe being closed under all operators in this family
+-- 𝔽 and 𝔾 are the decoding functions for ℚ
+--
+-- (𝕄 , 𝕊) is the universe closed under all operators in ℚ
+
 interleaved mutual
 
   data 𝕄 : Set
@@ -68,9 +88,27 @@ interleaved mutual
   data 𝕄 where
     q : ℚ → (a : 𝕄) → (𝕊 a → 𝕄) → 𝕄
     ℓ : (f : ℚ) → (a : 𝕄) → (b : 𝕊 a → 𝕄) → 𝕊 (q f a b) → 𝕄
+    code⊥ : 𝕄
+    code⊤ : 𝕄
+    codeB : 𝕄
+    codeN : 𝕄
+    codeS : 𝕄 → 𝕄 → 𝕄
+    codeE : (x : 𝕄) → (a b : 𝕊 x) → 𝕄
+    codeΠ : (a : 𝕄) → (b : 𝕊 a → 𝕄) → 𝕄
+    codeΣ : (a : 𝕄) → (b : 𝕊 a → 𝕄) → 𝕄
+    codeW : (a : 𝕄) → (b : 𝕊 a → 𝕄) → 𝕄
 
   𝕊 (q f a b) = 𝔽 f (𝕊 a) (λ y → 𝕊 (b y))
   𝕊 (ℓ f a b x) = 𝔾 f (𝕊 a) (λ y → 𝕊 (b y)) x
+  𝕊 code⊥ = ⊥
+  𝕊 code⊤ = ⊤
+  𝕊 codeB = Bool
+  𝕊 codeN = ℕ
+  𝕊 (codeS a b) = (𝕊 a) ⊕ (𝕊 b)
+  𝕊 (codeE x a b) = a ≡ b
+  𝕊 (codeΠ a b) = (x : 𝕊 a) → 𝕊 (b x)
+  𝕊 (codeΣ a b) = Σ (𝕊 a) (λ x → 𝕊 (b x))
+  𝕊 (codeW a b) = W (𝕊 a) (λ x → 𝕊 (b x))
 
   data ℚ where
     u : (c : 𝕄) → (𝕊 c → ℚ) → ℚ
@@ -84,6 +122,7 @@ interleaved mutual
 
 -- Op n is the type of operators of order n
 -- FamOp n is the type of families of operators in Op n
+
 interleaved mutual
 
   Op : ℕ → Set₁
