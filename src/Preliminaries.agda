@@ -119,6 +119,22 @@ A × B = Σ A (λ _ → B)
 infixl 20 _×_
 
 
+-- finite ordinals
+data Fin : Nat → Set where
+  zero : {n : Nat} → Fin (suc n)
+  suc  : {n : Nat} → Fin n → Fin (suc n)
+
+Finelim : {ℓ : Level} → (C : (n : Nat) → Fin n → Set ℓ) →
+            ((n : Nat) → C (suc n) zero) → ((n : Nat) (i : Fin n) → C n i → C (suc n) (suc i)) →
+              (n : Nat) (i : Fin n) → C n i
+Finelim {ℓ} C base ind (suc n) zero = base n
+Finelim {ℓ} C base ind (suc n) (suc i) = ind n i (Finelim C base ind n i)
+
+cast : {n : Nat} → Fin n → Fin (suc n)
+cast {.(suc _)} zero = zero
+cast {.(suc _)} (suc i) = suc (cast i)
+
+
 -- logical equivalence
 
 _↔_ : {a b : Level} → (A : Set a) → (B : Set b) → Set (a ⊔ b)
