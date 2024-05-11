@@ -20,7 +20,7 @@ open import Preliminaries
 -- A : Set,
 -- B : A → Set
 --
--- Elements of C are indices, and (A , B) provides a family of Sets
+-- Elements of C are indices, and (A , B) provides an A-indexed family of Sets
 -- (F , G) can be considered as a C-indexed family of operators of type (Σ Set λ A → Set) → (Σ Set λ A → Set)
 
 𝔸 : Set₁
@@ -28,7 +28,7 @@ open import Preliminaries
       Σ ((x : C) → (A : Set) → (B : A → Set) → F x A B → Set) λ _ → Σ Set λ A → A → Set
 
 -- For a given (C , F , G , A , B) : 𝔸, we define the universe (𝕌 D , 𝕋 D) such that
--- it contains C , A and B a for each a : A
+-- it contains C , A , B a for each a : A
 -- Moreover, (𝕌 D , 𝕋 D) is closed under all operators in (F , G)
 
 interleaved mutual
@@ -123,8 +123,10 @@ interleaved mutual
 
 -- Definition of Higher-Order Universe Operators of ML(n)
 
--- Op n is the type of operators of order n
--- FamOp n is the type of families of operators in Op n
+-- Op n is the type of operators of order n,
+-- where an operator of 0-order is defined as a Set
+-- FamOp n is the type of families of operators in Op n,
+-- so FamOp 0 is a family of Sets
 
 interleaved mutual
 
@@ -135,7 +137,6 @@ interleaved mutual
   Op (suc n) = FamOp n → FamOp n
 
   FamOp n = Σ Set (λ A → A → Op n)
-
 
 -- Useful lemmas for the natural number indices
 
@@ -149,15 +150,14 @@ interleaved mutual
 
   suc≤ {m} {.(suc _)} (s≤s x) = ≤suc x
 
-
 -- 𝕌h is an ℕ-indexed family of universes of higher-order universe operators, and
 -- 𝕋h is an ℕ-indexed family of the decoding functions
--- They are defined by indexed induction-recursion with the parameter A and B
+-- They are defined by indexed induction-recursion with the parameters A and B
 --
 -- Both 𝕌h n and 𝕋h n have two parameters A and B:
 -- A is a family A m, A (m - 1), ... , A 0 of Sets with m ≤ n, and
--- B is a family of operators of finite order such that
--- B m with m ≤ n returns an operator of the m-th order for each x : A m
+-- for each m with m ≤ n, B m is a family of operators of finite order such that
+-- B m x is an operator of the m-th order for each x : A m
 --
 -- 𝕌h n A B 0 has codes of A m, A (m - 1), ... , A 0, and
 -- 𝕌h n A B m has a code of B m x for each x : A m
@@ -178,11 +178,12 @@ interleaved mutual
          (B : (m : ℕ) → (x : m ≤ n) → A m x → Op m) → (m : ℕ) → (x : m ≤ n) → 𝕌h n A B m x → Op m
 
   -- (𝕦 , 𝕥) takes a (code of) family of universe operators of m-th order and
-  -- returns a (code of) new family of m-th universe operators obtained by applying an (m + 1)-th universe operator
+  -- returns a (code of) new family of m-th order universe operators obtained by
+  -- applying an (m + 1)-th universe operator
   
   data 𝕌h (n : ℕ) (A : (m : ℕ) → m ≤ n → Set) (B : (m : ℕ) → (x : m ≤ n) → A m x → Op m) where
     ∗ : (m : ℕ) → m ≤ n → 𝕌h n A B 0 z≤n  -- the codes of A m for each m
-    ℓ : (m : ℕ) → (x : m ≤ n) → A m x → 𝕌h n A B m x  -- the codes of B m for each m
+    ℓ : (m : ℕ) → (x : m ≤ n) → 𝕋h n A B 0 z≤n (∗ m x) → 𝕌h n A B m x  -- the codes of B m for each m
     𝕦 : (m : ℕ) → (x : suc m ≤ n) → (o : 𝕌h n A B (suc m) x) → (a : 𝕌h n A B 0 z≤n) →
           (b : 𝕋h n A B 0 z≤n a → 𝕌h n A B m (suc≤ x)) → 𝕌h n A B 0 z≤n
     𝕥 : (m : ℕ) → (x : suc m ≤ n) → (o : 𝕌h n A B (suc m) x) → (a : 𝕌h n A B 0 z≤n) →
@@ -282,7 +283,7 @@ B' (suc (suc 0)) (s≤s (s≤s z≤n)) = λ _ → Q̄₂
 
 -- The sort Set is considered as an external Mahlo universe
 --
--- For any function f : Σ Set (λ A → A → Set) → Σ Set (λ A → A → Set),
+-- For any function f : Σ Set (λ A → A → Set) → Σ Set (λ A → A → Set), i.e., f : Op 1,
 -- a subuniverse closed under f is defined as (𝕌m f , 𝕋m f) by induction-recursion with the parameter f
 
 interleaved mutual
@@ -322,3 +323,54 @@ interleaved mutual
 ι : {f : Σ Set (λ A → A → Set) → Σ Set (λ A → A → Set)} →
     Σ (𝕌m f) (λ x → 𝕋m f x → 𝕌m f) → Σ Set (λ A → A → Set)
 ι {f} (c₁ , c₂) = 𝕋m f c₁ , λ x → 𝕋m f (c₂ x)
+
+
+-- Definition of the external Mahlo universe with higher-order subuniverses
+-- Note that this extended Mahlo universe coincides with the union ⋃ { ML(n) ∣ n : ℕ }
+--
+-- Higher-order subuniverses are defined by indexed induction-recursion with the parameters A and B
+-- Similar to the case of universes of higher-order universe operators,
+-- A is an ℕ-indexed family of Sets, and 
+-- for each n : ℕ, B n is a family of operators such that
+-- B n x is an operator of n-th order for each x : A n, where a 0-th operator is nothing but a Set
+-- The parameter f in the subuniverse 𝕌m f of the external Mahlo universe is a special case of (A 1 , B 1),
+-- that is, A 1 = ⊤ and B 1 = λ x → f
+--
+-- Since the subuniverse 𝕌mh A B n has a code for each operator in B n (see the constructor ℓ below),
+-- the closedness of 𝕌mh A B n under all operators in B (n + 1) is shown by the constructors 𝕦 and 𝕥:
+-- take an argument o for 𝕦 and 𝕥 as the code of an operator in B (n + 1)
+
+interleaved mutual
+
+  data 𝕌mh (A : ℕ → Set) (B : (n : ℕ) → A n → Op n) : ℕ → Set
+  𝕋mh : (A : ℕ → Set) (B : (n : ℕ) → A n → Op n) → (n : ℕ) → 𝕌mh A B n → Op n
+
+  data 𝕌mh A B where
+    * : ℕ → 𝕌mh A B 0
+    ℓ : (n : ℕ) → 𝕋mh A B 0 (* n) → 𝕌mh A B n
+    𝕦 : (n : ℕ) → (o : 𝕌mh A B (suc n)) → Σ (𝕌mh A B 0) (λ a → 𝕋mh A B 0 a → 𝕌mh A B n) → 𝕌mh A B 0
+    𝕥 : (n : ℕ) → (o : 𝕌mh A B (suc n)) → (c : Σ (𝕌mh A B 0) (λ a → 𝕋mh A B 0 a → 𝕌mh A B n)) →
+              𝕋mh A B 0 (𝕦 n o c) → 𝕌mh A B n
+    code⊥ : 𝕌mh A B 0
+    code⊤ : 𝕌mh A B 0
+    codeB : 𝕌mh A B 0
+    codeN : 𝕌mh A B 0
+    codeS : 𝕌mh A B 0 → 𝕌mh A B 0 → 𝕌mh A B 0
+    codeE : (x : 𝕌mh A B 0) → (a b : 𝕋mh A B 0 x) → 𝕌mh A B 0
+    codeΠ : (a : 𝕌mh A B 0) → (b : 𝕋mh A B 0 a → 𝕌mh A B 0) → 𝕌mh A B 0
+    codeΣ : (a : 𝕌mh A B 0) → (b : 𝕋mh A B 0 a → 𝕌mh A B 0) → 𝕌mh A B 0
+    codeW : (a : 𝕌mh A B 0) → (b : 𝕋mh A B 0 a → 𝕌mh A B 0) → 𝕌mh A B 0
+
+  𝕋mh A B .0 (* n) = A n
+  𝕋mh A B n (ℓ n x) = B n x
+  𝕋mh A B .0 (𝕦 n o c) = fst (𝕋mh A B (suc n) o (𝕋mh A B 0 (fst c) , λ y → 𝕋mh A B n (snd c y)))
+  𝕋mh A B n (𝕥 .n o c x) = snd (𝕋mh A B (suc n) o (𝕋mh A B 0 (fst c) , λ y → 𝕋mh A B n (snd c y))) x
+  𝕋mh A B .0 code⊥ = ⊥
+  𝕋mh A B .0 code⊤ = ⊤
+  𝕋mh A B .0 codeB = Bool
+  𝕋mh A B .0 codeN = ℕ
+  𝕋mh A B .0 (codeS a b) = (𝕋mh A B 0 a) ⊕ (𝕋mh A B 0 b)
+  𝕋mh A B .0 (codeE a x y) = x ≡ y
+  𝕋mh A B .0 (codeΠ a b) = (x : 𝕋mh A B 0 a) → 𝕋mh A B 0 (b x)
+  𝕋mh A B .0 (codeΣ a b) = Σ (𝕋mh A B 0 a) λ x → 𝕋mh A B 0 (b x)
+  𝕋mh A B .0 (codeW a b) = W (𝕋mh A B 0 a) λ x → 𝕋mh A B 0 (b x)

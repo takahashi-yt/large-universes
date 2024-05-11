@@ -7,6 +7,8 @@ This repository formalises the following large universe types of Martin-Löf typ
 
 - the external Mahlo universe type [1] (a variant of the Mahlo universe type [4])
 
+Moreover, we extend the external Mahlo universe type by higher-order construction in the style of [2].
+
 [1] Peter Dybjer and Anton Setzer. Induction-recursion and initial algebras. *Ann. Pure Appl. Log.*, 124(1-3):1--47, 2003.
 
 [2] Erik Palmgren. On universes in type theory. In Giovanni Sambin and Jan M. Smith, editors, *Twenty Five Years of Constructive Type Theory*, Oxford Logic Guides, pages 191--204. Oxford University Press, 1998.
