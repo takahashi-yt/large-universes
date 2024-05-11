@@ -20,16 +20,16 @@ open import Preliminaries
 -- A : Set,
 -- B : A → Set
 --
--- elements of C are indices, and (A , B) provides a family of Sets
+-- Elements of C are indices, and (A , B) provides a family of Sets
 -- (F , G) can be considered as a C-indexed family of operators of type (Σ Set λ A → Set) → (Σ Set λ A → Set)
 
 𝔸 : Set₁
 𝔸 = Σ Set λ C → Σ (C → (A : Set) → (B : A → Set) → Set) λ F →
       Σ ((x : C) → (A : Set) → (B : A → Set) → F x A B → Set) λ _ → Σ Set λ A → A → Set
 
--- for a given (C , F , G , A , B) : 𝔸, we define the universe (𝕌 D , 𝕋 D) such that
+-- For a given (C , F , G , A , B) : 𝔸, we define the universe (𝕌 D , 𝕋 D) such that
 -- it contains C , A and B a for each a : A
--- moreover, (𝕌 D , 𝕋 D) is closed under all operators in (F , G)
+-- Moreover, (𝕌 D , 𝕋 D) is closed under all operators in (F , G)
 
 interleaved mutual
 
@@ -72,9 +72,12 @@ interleaved mutual
 -- elements of ℚ are codes of universe operators:
 -- the constructor u of ℚ takes a family of (codes of) universe operators as an input
 -- and returns a (code of) universe operator giving a universe being closed under all operators in this family
+--
 -- 𝔽 and 𝔾 are the decoding functions for ℚ
 --
 -- (𝕄 , 𝕊) is the universe closed under all operators in ℚ
+--
+-- (𝕄 , 𝕊) and (ℚ , 𝔽 , 𝔾) are defined by simultaneous induction-recursion
 
 interleaved mutual
 
@@ -128,26 +131,45 @@ interleaved mutual
   Op : ℕ → Set₁
   FamOp : ℕ → Set₁
 
-  Op zero = Set
+  Op 0 = Set
   Op (suc n) = FamOp n → FamOp n
 
   FamOp n = Σ Set (λ A → A → Op n)
+
+
+-- Useful lemmas for the natural number indices
 
 interleaved mutual
 
   ≤suc : {m n : ℕ} → m ≤ n → m ≤ suc n
   suc≤ : {m n : ℕ} → suc m ≤ n → m ≤ n
 
-  ≤suc {zero} {n} x = z≤n
+  ≤suc {0} {n} x = z≤n
   ≤suc {suc m} {n} x = s≤s (suc≤ x)
 
   suc≤ {m} {.(suc _)} (s≤s x) = ≤suc x
 
-{- our formulation of the system ML(n + 1) of higher-order universe operators has a family of types
-   (𝕌h n A B m x, 𝕋h n A B m x) for any m ≤ n with a proof x of m ≤ n
 
-   𝕌h n A B m x is a universe of universe operators of order m, and
-   𝕋h n A B m x is its decoding function -}
+-- 𝕌h is an ℕ-indexed family of universes of higher-order universe operators, and
+-- 𝕋h is an ℕ-indexed family of the decoding functions
+-- They are defined by indexed induction-recursion with the parameter A and B
+--
+-- Both 𝕌h n and 𝕋h n have two parameters A and B:
+-- A is a family A m, A (m - 1), ... , A 0 of Sets with m ≤ n, and
+-- B is a family of operators of finite order such that
+-- B m with m ≤ n returns an operator of the m-th order for each x : A m
+--
+-- 𝕌h n A B 0 has codes of A m, A (m - 1), ... , A 0, and
+-- 𝕌h n A B m has a code of B m x for each x : A m
+--
+-- Codes in 𝕌h n A B m are defined inductively from these basic codes by applying
+-- a (code of) universe operator of (m + 1)-order in 𝕌h n A B (m + 1)
+--
+-- Note that we provide a proof x of m ≤ n to 𝕌 n A B m and 𝕋 n A B m as an index due to the condition m ≤ n
+--
+-- The system ML(n + 1) consists of
+-- (𝕌 n A B n x , 𝕋 n A B n x), (𝕌 n A B (n - 1) x' , 𝕋 n A B (n - 1) x'), ... , (𝕌 n A B 0 x'' , 𝕋 n A B 0 x'')
+
 interleaved mutual
 
   data 𝕌h (n : ℕ) (A : (m : ℕ) → m ≤ n → Set)
@@ -155,11 +177,14 @@ interleaved mutual
   𝕋h : (n : ℕ) → (A : (m : ℕ) → m ≤ n → Set) →
          (B : (m : ℕ) → (x : m ≤ n) → A m x → Op m) → (m : ℕ) → (x : m ≤ n) → 𝕌h n A B m x → Op m
 
+  -- (𝕦 , 𝕥) takes a (code of) family of universe operators of m-th order and
+  -- returns a (code of) new family of m-th universe operators obtained by applying an (m + 1)-th universe operator
+  
   data 𝕌h (n : ℕ) (A : (m : ℕ) → m ≤ n → Set) (B : (m : ℕ) → (x : m ≤ n) → A m x → Op m) where
-    ∗ : (m : ℕ) → m ≤ n → 𝕌h n A B 0 z≤n
-    ℓ : (m : ℕ) → (x : m ≤ n) → A m x → 𝕌h n A B m x
+    ∗ : (m : ℕ) → m ≤ n → 𝕌h n A B 0 z≤n  -- the codes of A m for each m
+    ℓ : (m : ℕ) → (x : m ≤ n) → A m x → 𝕌h n A B m x  -- the codes of B m for each m
     𝕦 : (m : ℕ) → (x : suc m ≤ n) → (o : 𝕌h n A B (suc m) x) → (a : 𝕌h n A B 0 z≤n) →
-          (b : 𝕋h n A B 0 z≤n a → 𝕌h n A B m (suc≤ x)) → 𝕌h n A B zero z≤n
+          (b : 𝕋h n A B 0 z≤n a → 𝕌h n A B m (suc≤ x)) → 𝕌h n A B 0 z≤n
     𝕥 : (m : ℕ) → (x : suc m ≤ n) → (o : 𝕌h n A B (suc m) x) → (a : 𝕌h n A B 0 z≤n) →
           (b : 𝕋h n A B 0 z≤n a → 𝕌h n A B m (suc≤ x)) → 𝕋h n A B 0 z≤n (𝕦 m x o a b) → 𝕌h n A B m (suc≤ x)
     code⊥ : 𝕌h n A B 0 z≤n
@@ -187,6 +212,7 @@ interleaved mutual
   𝕋h n A B 0 z≤n (codeΠ a b) = (x : 𝕋h n A B 0 z≤n a) → 𝕋h n A B 0 z≤n (b x)
   𝕋h n A B 0 z≤n (codeΣ a b) = Σ (𝕋h n A B 0 z≤n a) (λ x → 𝕋h n A B 0 z≤n (b x))
   𝕋h n A B 0 z≤n (codeW a b) = W (𝕋h n A B 0 z≤n a) (λ x → 𝕋h n A B 0 z≤n (b x))
+
 
 -- MLQ as an instance of ML(3)
 
@@ -252,17 +278,20 @@ B' (suc (suc 0)) (s≤s (s≤s z≤n)) = λ _ → Q̄₂
 𝔾' f A B x = snd (𝕋h 2 A' B' 1 1≤2 f (A , B)) x
 
 
--- external Mahlo universe
+-- Definition of external Mahlo universe
 
-{- the sort Set is considered as an external Mahlo universe
+-- The sort Set is considered as an external Mahlo universe
+--
+-- For any function f : Σ Set (λ A → A → Set) → Σ Set (λ A → A → Set),
+-- a subuniverse closed under f is defined as (𝕌m f , 𝕋m f) by induction-recursion with the parameter f
 
-   for any function f on Σ Set (λ A → A → Set),
-   a subuniverse closed under f is defined as (𝕌m , 𝕋m) -}
 interleaved mutual
 
   data 𝕌m (f : Σ Set (λ A → A → Set) → Σ Set (λ A → A → Set)) : Set
   𝕋m : (f : Σ Set (λ A → A → Set) → Σ Set (λ A → A → Set)) → 𝕌m f → Set
 
+  -- code₁ and code₂ represent the restriction of f to 𝕌m f
+  
   data 𝕌m f where
     code₁ : Σ (𝕌m f) (λ a → 𝕋m f a → 𝕌m f) → 𝕌m f
     code₂ : (c : Σ (𝕌m f) (λ a → 𝕋m f a → 𝕌m f)) → 𝕋m f (code₁ c) → 𝕌m f
@@ -288,49 +317,8 @@ interleaved mutual
   𝕋m f (codeΣ a b) = Σ (𝕋m f a) (λ x → 𝕋m f (b x))
   𝕋m f (codeW a b) = W (𝕋m f a) (λ x → 𝕋m f (b x))
 
--- injection function
+-- the injection function
 
 ι : {f : Σ Set (λ A → A → Set) → Σ Set (λ A → A → Set)} →
     Σ (𝕌m f) (λ x → 𝕋m f x → 𝕌m f) → Σ Set (λ A → A → Set)
 ι {f} (c₁ , c₂) = 𝕋m f c₁ , λ x → 𝕋m f (c₂ x)
-
-
--- higher-order Mahlo universe operators
-
-{- for any m with m ≤ n and any function f on Σ Set (λ A → A → Op m) → Σ Set (λ A → A → Op m),
-   i.e., families of operators of order m,
-   
-   we define a universe (𝕌hm n f m x , 𝕋hm n f m x) closed under f, where x is a proof of m ≤ n
-
-   the case of m = 0 corresponds to the external Mahlo universe -}
-interleaved mutual
-
-  data 𝕌hm (n : ℕ) (f : (m : ℕ) → m ≤ n → Σ Set (λ A → A → Op m) → Σ Set (λ A → A → Op m)) : (m : ℕ) → m ≤ n → Set
-  𝕋hm : (n : ℕ) → (f : (m : ℕ) → m ≤ n → Σ Set (λ A → A → Op m) → Σ Set (λ A → A → Op m)) →
-          (m : ℕ) → (x : m ≤ n) → 𝕌hm n f m x → Op m
-
-  data 𝕌hm n f where
-    code₁ : (m : ℕ) → (x : m ≤ n) → Σ (𝕌hm n f 0 z≤n) (λ a → 𝕋hm n f 0 z≤n a → 𝕌hm n f m x) → 𝕌hm n f 0 z≤n
-    code₂ : (m : ℕ) → (x : m ≤ n) → (c : Σ (𝕌hm n f 0 z≤n) (λ a → 𝕋hm n f 0 z≤n a → 𝕌hm n f m x)) →
-      𝕋hm n f 0 z≤n (code₁ m x c) → 𝕌hm n f m x
-    code⊥ : 𝕌hm n f 0 z≤n
-    code⊤ : 𝕌hm n f 0 z≤n
-    codeB : 𝕌hm n f 0 z≤n
-    codeN : 𝕌hm n f 0 z≤n
-    codeS : 𝕌hm n f 0 z≤n → 𝕌hm n f 0 z≤n → 𝕌hm n f 0 z≤n
-    codeE : (x : 𝕌hm n f 0 z≤n) → (a b : 𝕋hm n f 0 z≤n x) → 𝕌hm n f 0 z≤n
-    codeΠ : (a : 𝕌hm n f 0 z≤n) → (b : 𝕋hm n f 0 z≤n a → 𝕌hm n f 0 z≤n) → 𝕌hm n f 0 z≤n
-    codeΣ : (a : 𝕌hm n f 0 z≤n) → (b : 𝕋hm n f 0 z≤n a → 𝕌hm n f 0 z≤n) → 𝕌hm n f 0 z≤n
-    codeW : (a : 𝕌hm n f 0 z≤n) → (b : 𝕋hm n f 0 z≤n a → 𝕌hm n f 0 z≤n) → 𝕌hm n f 0 z≤n
-
-  𝕋hm n f .0 .z≤n (code₁ m x c) = fst (f m x (𝕋hm n f 0 z≤n (fst c) , λ y → 𝕋hm n f m x (snd c y)))
-  𝕋hm n f m x (code₂ .m .x c y) = snd (f m x (𝕋hm n f 0 z≤n (fst c) , λ z → 𝕋hm n f m x (snd c z))) y
-  𝕋hm n f 0 z≤n code⊥ = ⊥
-  𝕋hm n f 0 z≤n code⊤ = ⊤
-  𝕋hm n f 0 z≤n codeB = Bool
-  𝕋hm n f 0 z≤n codeN = ℕ
-  𝕋hm n f 0 z≤n (codeS a b) = (𝕋hm n f 0 z≤n a) ⊕ (𝕋hm n f 0 z≤n b)
-  𝕋hm n f 0 z≤n (codeE x a b) = a ≡ b
-  𝕋hm n f 0 z≤n (codeΠ a b) = (x : 𝕋hm n f 0 z≤n a) → 𝕋hm n f 0 z≤n (b x)
-  𝕋hm n f 0 z≤n (codeΣ a b) = Σ (𝕋hm n f 0 z≤n a) (λ x → 𝕋hm n f 0 z≤n (b x))
-  𝕋hm n f 0 z≤n (codeW a b) = W (𝕋hm n f 0 z≤n a) (λ x → 𝕋hm n f 0 z≤n (b x))
