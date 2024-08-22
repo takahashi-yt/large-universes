@@ -13,21 +13,29 @@ open import Preliminaries
 
 -- Definition of the two universes (𝕄 , 𝕊) and (ℚ , 𝔽 , 𝔾) of MLQ
 
--- 𝔸 is the type of tuples which consist of
+-- We first define a universe (𝕌 D , 𝕋 D)
+
+-- 𝔸 below is the type of tuples which consist of
 -- C : Set,
 -- F : C → (A : Set) → (B : A → Set) → Set,
 -- G : (x : C) → (A : Set) → (B : A → Set) → F x A B → Set,
 -- A : Set,
 -- B : A → Set
 --
--- Elements of C are indices, and (A , B) provides an A-indexed family of Sets
--- (F , G) can be considered as a C-indexed family of operators of type (Σ Set λ A → Set) → (Σ Set λ A → Set)
+-- Elements of C are indices, and (F , G) can be considered as
+-- a C-indexed family of operators of type (Σ Set λ A → Set) → (Σ Set λ A → Set)
+-- That is, an operator f in F takes (X , Y) : Σ Set λ A → Set, and returns a set
+--
+-- The corresponding operator g in G takes (X , Y), and returns a family of sets
+-- indexed by the set given by f (X , Y)
+--
+-- (A , B) is a usual family of Sets
 
 𝔸 : Set₁
 𝔸 = Σ Set λ C → Σ (C → (A : Set) → (B : A → Set) → Set) λ F →
       Σ ((x : C) → (A : Set) → (B : A → Set) → F x A B → Set) λ _ → Σ Set λ A → A → Set
 
--- For a given (C , F , G , A , B) : 𝔸, we define the universe (𝕌 D , 𝕋 D) such that
+-- For a given D = (C , F , G , A , B) : 𝔸, we define the universe (𝕌 D , 𝕋 D) such that
 -- it contains C , A , B a for each a : A
 -- Moreover, (𝕌 D , 𝕋 D) is closed under all operators in (F , G)
 
@@ -70,7 +78,7 @@ interleaved mutual
 
 -- (ℚ , 𝔽 , 𝔾) is the universe such that
 -- elements of ℚ are codes of universe operators:
--- the constructor u of ℚ takes a family of (codes of) universe operators as an input
+-- the constructor u of ℚ takes a family of (codes of) universe operators as an input,
 -- and returns a (code of) universe operator giving a universe being closed under all operators in this family
 --
 -- 𝔽 and 𝔾 are the decoding functions for ℚ
@@ -78,6 +86,8 @@ interleaved mutual
 -- (𝕄 , 𝕊) is the universe closed under all operators in ℚ
 --
 -- (𝕄 , 𝕊) and (ℚ , 𝔽 , 𝔾) are defined by simultaneous induction-recursion
+--
+-- The universe (𝕌 D , 𝕋 D) above is used in the definition of (ℚ , 𝔽 , 𝔾)
 
 interleaved mutual
 
@@ -143,19 +153,21 @@ interleaved mutual
 interleaved mutual
 
   ≤suc : {m n : ℕ} → m ≤ n → m ≤ suc n
-  suc≤ : {m n : ℕ} → suc m ≤ n → m ≤ n
+  pred≤ : {m n : ℕ} → m ≤ n → Data.Nat.pred m ≤ n
 
   ≤suc {0} {n} x = z≤n
-  ≤suc {suc m} {n} x = s≤s (suc≤ x)
+  ≤suc {suc m} {n} x = s≤s (pred≤ x)
 
-  suc≤ {m} {.(suc _)} (s≤s x) = ≤suc x
+  pred≤ {0} {n} x = x
+  pred≤ {suc m} {0} ()
+  pred≤ {suc m} {suc n} x = ≤suc (s≤s⁻¹ x)
 
 -- 𝕌h is an ℕ-indexed family of universes of higher-order universe operators, and
 -- 𝕋h is an ℕ-indexed family of the decoding functions
 -- They are defined by indexed induction-recursion with the parameters A and B
 --
 -- Both 𝕌h n and 𝕋h n have two parameters A and B:
--- A is a family A m, A (m - 1), ... , A 0 of Sets with m ≤ n, and
+-- A is a family {A m, A (m - 1), ... , A 0} of Sets with m ≤ n, and
 -- for each m with m ≤ n, B m is a family of operators of finite order such that
 -- B m x is an operator of the m-th order for each x : A m
 --
@@ -185,9 +197,9 @@ interleaved mutual
     ∗ : (m : ℕ) → m ≤ n → 𝕌h n A B 0 z≤n  -- the codes of A m for each m
     ℓ : (m : ℕ) → (x : m ≤ n) → 𝕋h n A B 0 z≤n (∗ m x) → 𝕌h n A B m x  -- the codes of B m for each m
     𝕦 : (m : ℕ) → (x : suc m ≤ n) → (o : 𝕌h n A B (suc m) x) → (a : 𝕌h n A B 0 z≤n) →
-          (b : 𝕋h n A B 0 z≤n a → 𝕌h n A B m (suc≤ x)) → 𝕌h n A B 0 z≤n
+          (b : 𝕋h n A B 0 z≤n a → 𝕌h n A B m (pred≤ x)) → 𝕌h n A B 0 z≤n
     𝕥 : (m : ℕ) → (x : suc m ≤ n) → (o : 𝕌h n A B (suc m) x) → (a : 𝕌h n A B 0 z≤n) →
-          (b : 𝕋h n A B 0 z≤n a → 𝕌h n A B m (suc≤ x)) → 𝕋h n A B 0 z≤n (𝕦 m x o a b) → 𝕌h n A B m (suc≤ x)
+          (b : 𝕋h n A B 0 z≤n a → 𝕌h n A B m (pred≤ x)) → 𝕋h n A B 0 z≤n (𝕦 m x o a b) → 𝕌h n A B m (pred≤ x)
     code⊥ : 𝕌h n A B 0 z≤n
     code⊤ : 𝕌h n A B 0 z≤n
     codeB : 𝕌h n A B 0 z≤n
@@ -201,9 +213,9 @@ interleaved mutual
   𝕋h n A B .0 .z≤n (∗ m x) = A m x
   𝕋h n A B m x (ℓ .m .x y) = B m x y
   𝕋h n A B .0 .z≤n (𝕦 m x o a b) =
-    fst (𝕋h n A B (suc m) x o (𝕋h n A B 0 z≤n a , λ y → 𝕋h n A B m (suc≤ x) (b y)))
-  𝕋h n A B m .(suc≤ x) (𝕥 .m x o a b y) =
-    snd (𝕋h n A B (suc m) x o (𝕋h n A B 0 z≤n a , λ z → 𝕋h n A B m (suc≤ x) (b z))) y
+    fst (𝕋h n A B (suc m) x o (𝕋h n A B 0 z≤n a , λ y → 𝕋h n A B m (pred≤ x) (b y)))
+  𝕋h n A B m .(pred≤ x) (𝕥 .m x o a b y) =
+    snd (𝕋h n A B (suc m) x o (𝕋h n A B 0 z≤n a , λ z → 𝕋h n A B m (pred≤ x) (b z))) y
   𝕋h n A B 0 z≤n code⊥ = ⊥
   𝕋h n A B 0 z≤n code⊤ = ⊤
   𝕋h n A B 0 z≤n codeB = Bool
@@ -230,21 +242,21 @@ Q₁ : Op 1
 Q₁ (A , B) =  𝕌h 0 A' B' 0 z≤n , 𝕋h 0 A' B' 0 z≤n
   where
   A' : (m : ℕ) → m ≤ 0 → Set
-  A' 0 z≤n = A
+  A' m x = A
 
   B' : (m : ℕ) → (x : m ≤ 0) → A' m x → Op m
-  B' 0 z≤n y = B y
+  B' 0 x y = B y
 
 Q₂ : FamOp 1 → Op 1
 Q₂ (I , J) (A , B) = 𝕌h 1 A' B' 0 z≤n , 𝕋h 1 A' B' 0 z≤n 
   where
   A' : (m : ℕ) → m ≤ 1 → Set
-  A' 0 z≤n = A
-  A' (suc 0) (s≤s x) = I
+  A' 0 x = A
+  A' (suc m) x = I
 
   B' : (m : ℕ) → (x : m ≤ 1) → A' m x → Op m
-  B' 0 z≤n y = B y
-  B' (suc 0) (s≤s x) y = J y
+  B' 0 x y = B y
+  B' 1 (s≤s x) y = J y
 
 Q̄₂ : Op 2
 Q̄₂ (I , J) = ⊤ , λ _ → Q₂ (I , J)
@@ -254,14 +266,13 @@ postulate
   Y : X → Set
   
 A' : (m : ℕ) → m ≤ 2 → Set
-A' 0 z≤n = X
-A' (suc 0) (s≤s z≤n) = ⊤
-A' (suc (suc 0)) (s≤s (s≤s z≤n)) = ⊤
+A' 0 x = X
+A' (suc m) x = ⊤
 
 B' : (m : ℕ) → (x : m ≤ 2) → A' m x → Op m
-B' 0 z≤n = Y
-B' (suc 0) (s≤s z≤n) = λ _ → Q₁
-B' (suc (suc 0)) (s≤s (s≤s z≤n)) = λ _ → Q̄₂
+B' 0 x = Y
+B' (suc 0) (s≤s x) = λ _ → Q₁
+B' (suc (suc 0)) (s≤s (s≤s x)) = λ _ → Q̄₂
 
 𝕄' : Set
 𝕄' = 𝕌h 2 A' B' 0 z≤n
@@ -336,9 +347,14 @@ interleaved mutual
 -- The parameter f in the subuniverse 𝕌m f of the external Mahlo universe is a special case of (A 1 , B 1),
 -- that is, A 1 = ⊤ and B 1 = λ x → f
 --
--- Since the subuniverse 𝕌mh A B n has a code for each operator in B n (see the constructor ℓ below),
+-- Since the subuniverse 𝕌mh A B m has a code for each operator in B m (see the constructor ℓ below),
 -- the closedness of 𝕌mh A B n under all operators in B (n + 1) is shown by the constructors 𝕦 and 𝕥:
 -- take an argument o for 𝕦 and 𝕥 as the code of an operator in B (n + 1)
+--
+-- Compared with the external Mahlo universe above, the strength of its variant with higher-order subuniverses
+-- consists in the fact that the subuniverse 𝕌mh A B 0 is closed not only under
+-- the first-order operators in (A 1 , B 1), but also under all first-order operators obtained by
+-- applying A, B, ∗, ℓ, 𝕦, 𝕥 in this system
 
 interleaved mutual
 
