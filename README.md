@@ -16,3 +16,13 @@ Moreover, we extend the external Mahlo universe type by higher-order constructio
 [3] Michael Rathjen, Edward R. Griffor, and Erik Palmgren. Inaccessibility in constructive set theory and type theory. *Ann. Pure Appl. Log.*, 94(1-3):181--200, 1998.
 
 [4] Anton Setzer. Extending Martin-Löf type theory by one Mahlo-universe. *Arch. Math. Log.*, 39(3):155--181, 2000.
+
+## Outline
+
+`Preliminaries.agda`: Several notions of the core type theory are defined.
+
+`MLQ.agda`: The universe types M and Q in MLQ are defined.
+
+`HOUOperator.agda`: The higher-order universe operators of ML(n) are defined.
+
+`MahloHOSubuniverse.agda`: The external Mahlo universe type and its extension with higher-order subuniverses are defined.
